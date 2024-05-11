@@ -1,7 +1,3 @@
-<script setup lang="ts">
-import upload from './components/upload.vue'
-</script>
-
 <template>
   <section>
     <div>
@@ -17,6 +13,10 @@ import upload from './components/upload.vue'
   
 </template>
 
+<script setup lang="ts">
+import upload from './components/upload.vue'
+</script>
+º
 <style scoped>
 .logo {
   height: 6em;
