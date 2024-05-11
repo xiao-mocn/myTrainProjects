@@ -28,36 +28,45 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import { getFileHashNum } from '../utils/hash'
+import { FilePiece, splitFile } from '../utils/file'
 import { ElMessage, UploadFile, UploadProps } from 'element-plus'
+import { checkFile, uploadChunk } from '../api/uploadFile'
 
 const file = ref<UploadFile | null>(null)
+const hash = ref<string>('')
+const fileChunks = ref<FilePiece[]>([])
 
 const onFileChange: UploadProps['onChange']  = (uploadFile) => {
-  console.log(uploadFile);
+  console.log('uploadFile ===', uploadFile);
   file.value = uploadFile
-  // const target = e.target as HTMLInputElementn
-  // file.value = target.files ? target.files[0] : null
 }
 const submitUpload = async () => {
   if (!file.value) {
     ElMessage.warning('请选择文件再进行上传')
     return
   }
-  const hash = await getFileHashNum(file.value)
+  hash.value = await getFileHashNum(file.value)
   console.log('hash ===', hash);
+  fileChunks.value = splitFile(file.value, hash.value)
+  console.log('fileChunks ===', fileChunks);
+  const data = await checkFile({ fileName: fileChunks.value[0].pieceName, hash: hash.value})
+  console.log('data ===', data)
+  for(let i = 0; i < fileChunks.value.length; i++) {
+    const piece = fileChunks.value[i]
+    await uploadChunk({
+      chunk: piece.chunk,
+      hash: hash.value,
+      fileName: file.value.name
+    })
+  }
   
-  
 }
 
-// 获取切片
-const getFileChunks = () => {
 
-}
+// // 获取文件的哈希值
+// const getFileHash = () => {
 
-// 获取文件的哈希值
-const getFileHash = () => {
-
-}
+// }
 
 // 验证文件是否已经上传，获取服务器已经上传的相关切片
 // const 
@@ -85,15 +94,11 @@ const getFileHash = () => {
   justify-content: center;
   align-items: center;
 }
-.upload-demo {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
 .upload-progress {
   margin: 30px;
+}
+.ml-3 {
+  margin-left: 30px;
 }
 ::v-deep(.el-upload-list--text) {
   min-width: 200px;

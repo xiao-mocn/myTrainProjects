@@ -29,11 +29,11 @@ class RequestServer {
     )
   }
   // 定义方法
-  Get<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    return this.instance.get(url, config)
+  Get<T>(config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    return this.instance({ ...config, method: 'GET'})
   }
-  Post<T>(url: string, data?: any, config?: HttpRequestConfig): Promise<HttpResponse<T>> {
-    return this.instance.post(url, data, config)
+  Post<T>(config?: HttpRequestConfig): Promise<HttpResponse<T>> {
+    return this.instance({ ...config, method: 'POST' })
   }
 }
 

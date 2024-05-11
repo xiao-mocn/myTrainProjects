@@ -17,6 +17,7 @@
     "koa-router": "^12.0.1"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/koa": "^2.15.0",
     "@types/koa-router": "^7.4.8",
     "nodemon": "^3.1.0",

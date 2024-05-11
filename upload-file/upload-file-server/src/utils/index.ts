@@ -1,10 +1,6 @@
-export const isValidString = (s) => {
-  return typeof s === 'string' && s.length > 0
-}
+import path from 'path'
 
-export const isPositiveInter = (s) => {
-  // 判断一个数是不是大于等于零的正整数
-  return typeof s === 'number' && s >= 0 && s % 1 === 0
-}
+export const UPLOAD_DIR = path.resolve(__dirname, '../../../', 'uploadFile')
 
-export const isUndefined = s => typeof s === 'undefined'
+// 创建临时文件夹用于临时存储 chunk
+export const getChunkDir = (fileHash: string): string => path.resolve(UPLOAD_DIR, `chunkDir_${fileHash}`)
