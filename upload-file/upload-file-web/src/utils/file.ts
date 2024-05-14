@@ -1,5 +1,6 @@
 import { UploadFile } from 'element-plus'
 import { DEFAULT_CHUNK_MAX_COUNT, DEFAULT_CHUNK_SIZE } from '../const'
+import ts from 'typescript';
 
 export interface FilePiece {
   chunk: Blob;
@@ -28,4 +29,23 @@ export const splitFile = (file: UploadFile, hash: string) => {
   }
 
   return fileChunks
+}
+
+export function ConcurrentProcessor (params: any) {
+  const { max, progressTasks } = params
+  const maxTask = max | 5
+  const pool: any[] = []
+  let finish = 0
+  const failList = []
+  for (let i = 0; i < progressTasks.length; i++) {
+    const task = progressTasks[i]
+    task.then(() => {
+      finish++
+      const j = pool.findIndex(t => t === task);
+      pool.splice(j);
+    }).catch(() => {
+      failList.push(task)
+    })
+    
+  }
 }

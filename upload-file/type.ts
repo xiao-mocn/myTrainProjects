@@ -6,11 +6,12 @@ export interface Response<T> {
 
 export interface FindFileControllerParams {
   // 文件名
-  fileName: string,
-  hash: string
+  fileName: string
 }
 
-export type FindFileControllerResponse = Response<{ isExists: boolean, fileList: string[] }>;
+export type FindFileControllerResponse = Response<{
+  isExists: boolean
+}>;
 
 
 export interface uploadChunkControllerParams {
@@ -25,4 +26,15 @@ export interface uploadChunkControllerParams {
 export type uploadChunkControllerReponse = Response<{
   index: number;
   hash: string;
+}>;
+
+
+export interface mergeFileControllerParams {
+  fileName: string;
+  hash: string;
+}
+
+export type mergeFileControllerReponse = Response<{
+  fileName: string;
+  path: string;
 }>;

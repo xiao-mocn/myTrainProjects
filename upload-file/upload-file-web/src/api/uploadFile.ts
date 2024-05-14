@@ -3,13 +3,16 @@ import {
   BASE_URL,
   HTTP_TIMEOUT,
   API_FIND_FILE,
-  API_UPLOAD_CHUNK
+  API_UPLOAD_CHUNK,
+  API_MERGE_FILE
 } from "../const"
 import {
   FindFileControllerParams,
   FindFileControllerResponse,
   uploadChunkControllerParams,
-  uploadChunkControllerReponse
+  uploadChunkControllerReponse,
+  mergeFileControllerParams,
+  mergeFileControllerReponse
 } from '../../../type'
 
 const uploadApi = new RequestServer({
@@ -19,12 +22,12 @@ const uploadApi = new RequestServer({
 
 export async function checkFile(params: FindFileControllerParams) {
   const res = await uploadApi.Get<FindFileControllerResponse>({
-    url: API_FIND_FILE
+    url: `${ API_FIND_FILE }?fileName=${ params.fileName }`
   });
   return res.data;
 }
 
-export async function uploadChunk( params: uploadChunkControllerParams ) {
+export async function uploadChunk(params: uploadChunkControllerParams ) {
   const { chunk, hash, fileName } = params;
   const formData = new FormData();
   formData.append('hash', hash);
@@ -40,6 +43,10 @@ export async function uploadChunk( params: uploadChunkControllerParams ) {
   })
   return res.data
 }
-export function mergeFile() {
-  
+export async function mergeFile(params: mergeFileControllerParams ) {
+  const res = await uploadApi.Post<mergeFileControllerReponse>({
+    url: API_MERGE_FILE,
+    data: params,
+  })
+  return res.data
 }
