@@ -14,6 +14,7 @@ import {
   mergeFileControllerParams,
   mergeFileControllerReponse
 } from '../../../type'
+import { type CancelToken } from 'axios';
 
 const uploadApi = new RequestServer({
   baseURL: BASE_URL,
@@ -27,8 +28,8 @@ export async function checkFile(params: FindFileControllerParams) {
   return res.data;
 }
 
-export async function uploadChunk(params: uploadChunkControllerParams ) {
-  const { chunk, hash, fileName } = params;
+export async function uploadChunk(params: uploadChunkControllerParams & { cancelToken?: CancelToken } ) {
+  const { chunk, hash, fileName, cancelToken } = params;
   const formData = new FormData();
   formData.append('hash', hash);
   formData.append('chunk', chunk);
@@ -39,7 +40,8 @@ export async function uploadChunk(params: uploadChunkControllerParams ) {
     data: formData,
     headers: {
       'content-type': 'multipart/form-data'
-    }
+    },
+    cancelToken: cancelToken
   })
   return res.data
 }

@@ -10,12 +10,12 @@ export async function mergeChunkController (ctx: Context) {
   const chunks = files.filter(file => {
     return file.split('_')[0] === hash
   }).sort((a, b) => {
-    const aIndex = parseInt(a.split('-')[1], 10);
-    const bIndex = parseInt(b.split('-')[1], 10);
+    const aIndex = parseInt(a.split('_')[1], 10);
+    const bIndex = parseInt(b.split('_')[1], 10);
     return aIndex - bIndex
   })
   const writeStream = fs.createWriteStream(`${UPLOAD_DIR}/${fileName}`);
-  console.log('chunks =', chunks)
+  // console.log('chunks =', chunks)
   for (const chunk of chunks) {
     await appendChunkContent(chunk, writeStream)
   }
