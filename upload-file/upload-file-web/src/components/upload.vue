@@ -36,12 +36,13 @@
 
 
 <script setup lang="ts">
-import {ref} from 'vue'
+import { ref, onMounted} from 'vue'
 import axios from 'axios';
 import { getFileHashNum } from '../utils/hash'
 import { FilePiece, splitFile } from '../utils/file'
 import { ElMessage, UploadFile, UploadProps, UploadInstance } from 'element-plus'
 import { checkFile, uploadChunk, mergeFile } from '../api/uploadFile'
+import { openDB, getData, addData } from '../utils/indexDb'
 
 const upload = ref<UploadInstance>()
 const fileList = ref<UploadFile[]>([])
@@ -51,6 +52,10 @@ const uploadLoadding = ref(false)
 const CancelToken = axios.CancelToken;
 let source = CancelToken.source();
 const uploading = ref(true)
+let db: IDBDatabase = {} as IDBDatabase
+onMounted(async () => {
+  db = await openDB('uploadFile', 2)
+});
 
 const onFileChange: UploadProps['onChange']  = (uploadFile) => {
   console.log('uploadFile ===', uploadFile);
@@ -74,21 +79,40 @@ const submitUpload = async () => {
   }
   uploadLoadding.value = true
   for (const file of fileList.value) {
-    progressPercentage.value = 0
+    console.time('checkFile')
+    const fileIsExists: any = await checkFile({ fileName: file.name })  
+    if (fileIsExists.isExists) {
+      progressPercentage.value = 100
+      ElMessage.success(`${file.name} 上传成功`)
+      uploadLoadding.value = false
+      continue
+    }
+    console.timeEnd('checkFile')
     await uploadFile(file)
   }
   uploadLoadding.value = false
 }
 const uploadFile = async (file: UploadFile) => {
-  const fileIsExists: any = await checkFile({ fileName: file.name })  
-  if (fileIsExists.isExists) {
-    progressPercentage.value = 100
-    ElMessage.success(`${file.name} 上传成功`)
-    uploadLoadding.value = false
-    return fileIsExists
+  progressPercentage.value = 0
+  console.time('getFileHashNum')
+  const hash = await getData(db, 'hash', file.name)
+  if (hash) {
+    fileHash = hash.value
+  } else {
+    fileHash = await getFileHashNum(file)
+    await addData(db, 'hash', { name: file.name, value: fileHash })
   }
-  fileHash = await getFileHashNum(file)
-  const fileChunks = splitFile(file, fileHash)
+  console.timeEnd('getFileHashNum')
+  console.time('storgeChunk')
+  const storgeChunk = await getData(db, 'chunks', file.name)
+  console.timeEnd('storgeChunk')
+  let fileChunks: FilePiece[] = []
+  if (storgeChunk) {
+    fileChunks = storgeChunk.value
+  } else {
+    fileChunks = splitFile(file, fileHash)
+    await addData(db, 'chunks', { name: file.name, value: fileChunks })
+  }
   await runTasksWithConcurrencyLimit(file, fileChunks, 3)
 }
 const uploadTask = async (chunk: FilePiece) => {
