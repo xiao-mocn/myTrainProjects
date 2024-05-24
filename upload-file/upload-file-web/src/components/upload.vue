@@ -5,12 +5,15 @@
       <el-upload
         ref="upload"
         class="upload-demo"
+        multiple
         :on-change="onFileChange"
+        :on-remove="handleRemove"
         :on-exceed="handleExceed"
         :action="''"
-        :limit="1"
+        :limit="3"
         :auto-upload="false"
         :show-file-list="true"
+        :fileList="fileList"
       >
         <template #trigger>
           <el-button type="primary">请选择文件</el-button>
@@ -37,117 +40,102 @@ import {ref} from 'vue'
 import axios from 'axios';
 import { getFileHashNum } from '../utils/hash'
 import { FilePiece, splitFile } from '../utils/file'
-import { ElMessage, UploadFile, UploadProps, genFileId, UploadInstance, UploadRawFile } from 'element-plus'
+import { ElMessage, UploadFile, UploadProps, UploadInstance } from 'element-plus'
 import { checkFile, uploadChunk, mergeFile } from '../api/uploadFile'
 
 const upload = ref<UploadInstance>()
-const file = ref<UploadFile | null>(null)
-const hash = ref<string>('')
-const fileChunks = ref<FilePiece[]>([])
-const isShowProgress = ref(false)
+const fileList = ref<UploadFile[]>([])
+let fileHash: string = ('')
 const progressPercentage = ref(0)
 const uploadLoadding = ref(false)
 const CancelToken = axios.CancelToken;
 let source = CancelToken.source();
 const uploading = ref(true)
-let uploadedChunks:string[] = []
 
 const onFileChange: UploadProps['onChange']  = (uploadFile) => {
   console.log('uploadFile ===', uploadFile);
   progressPercentage.value = 0
-  file.value = uploadFile
-  uploadedChunks = []
+  fileList.value.push(uploadFile)
 }
-const handleExceed: UploadProps['onExceed'] = (files) => {
-  upload.value!.clearFiles()
-  const file = files[0] as UploadRawFile
-  file.uid = genFileId()
-  upload.value!.handleStart(file)
+const handleRemove = (file: UploadFile) => {
+  fileList.value.splice(fileList.value.indexOf(file), 1)
+  
+}
+const handleExceed: UploadProps['onExceed'] = () => {
+  ElMessage.warning('最多只能上传3个文件')
 }
 const percentageFormat = () => {
   return `${progressPercentage.value}%`
 }
 const submitUpload = async () => {
-  if (!file.value) {
+  if (!fileList.value.length) {
     ElMessage.warning('请选择文件再进行上传')
     return
   }
-  isShowProgress.value = true
   uploadLoadding.value = true
-  const fileIsExists: any = await checkFile({ fileName: file.value.name })  
+  for (const file of fileList.value) {
+    progressPercentage.value = 0
+    await uploadFile(file)
+  }
+  uploadLoadding.value = false
+}
+const uploadFile = async (file: UploadFile) => {
+  const fileIsExists: any = await checkFile({ fileName: file.name })  
   if (fileIsExists.isExists) {
     progressPercentage.value = 100
-    ElMessage.success('上传成功')
+    ElMessage.success(`${file.name} 上传成功`)
     uploadLoadding.value = false
-    return
+    return fileIsExists
   }
-  hash.value = await getFileHashNum(file.value)
-  fileChunks.value = splitFile(file.value, hash.value)
-  const totalChunks = fileChunks.value.length
-  let failedChunks: FilePiece[] = []
+  fileHash = await getFileHashNum(file)
+  const fileChunks = splitFile(file, fileHash)
+  await runTasksWithConcurrencyLimit(file, fileChunks, 3)
+}
+const uploadTask = async (chunk: FilePiece) => {
+  const fileIsExists: any  = await checkFile({ fileName: chunk.pieceName })
+  if (!fileIsExists.isExists) {
+    await uploadChunk({
+      chunk: chunk.chunk,
+      hash: fileHash,
+      fileName: chunk.pieceName,
+      cancelToken: source.token
+    })
+  }
+}
+const runTasksWithConcurrencyLimit = async (file: UploadFile, fileChunks: FilePiece[], limit: number = 3) => {
   let progress = 0
-  const pool = new Set()
-  const uploadFileChunks = async (chunks: FilePiece[], max = 3 ) => {
-    const size = max
-    for (let i = 0; i < chunks.length; i++) {
-      if (!uploading.value) {
-        break;
-      }
-      const chunk = chunks[i];
-      // 判断是否上传过
-      if (uploadedChunks.includes(chunk.pieceName)) {
-        progress++;
-        progressPercentage.value = parseFloat((progress  * 100 / totalChunks).toFixed(2))
-        continue
-      }
-      if (pool.size >= size) {
-        await Promise.race(pool)
-      }
-      const task = uploadTask(chunk).then(async () => {
-        // 收集上传成功的chunk
-        uploadedChunks.push(chunk.pieceName)
-        progress++;
-        progressPercentage.value = parseFloat((progress  * 100 / totalChunks).toFixed(2))
-        pool.delete(task)
-        if (progress === totalChunks) {
-          await mergeFile({ fileName: file.value!.name, hash: hash.value })
-          ElMessage.success('上传成功') 
-          uploadLoadding.value = false
-        }
-      }).catch((error) => {
-        console.error(`Chunk upload failed for ${chunk.pieceName}:`, error);
-        failedChunks.push(chunk);
-      })
-      pool.add(task)
+  const executing = new Set<Promise<any>>()
+  for (const chunk of fileChunks) {
+    // 当点击取消时，则暂停循环
+    if (!uploading.value) {
+      return
     }
+    // 当达到并发限制时，等待其中一个任务完成
+    if (executing.size >= limit) {
+      await Promise.race(executing)
+    }
+    const task = uploadTask(chunk).then(() => {
+      executing.delete(task)
+      progress++
+      progressPercentage.value = parseFloat((progress  * 100 / fileChunks.length).toFixed(2))
+    })
+    executing.add(task)
+    
   }
-
-  const uploadTask = async (chunk: FilePiece) => {
-    const { isExists }: any  = await checkFile({ fileName: chunk.pieceName });
-    if (!isExists) {
-      console.log(source.token)
-      return await uploadChunk({
-        chunk: chunk.chunk,
-        hash: hash.value,
-        fileName: chunk.pieceName,
-        cancelToken: source.token
-      })
-    }
-    if (failedChunks.length > 0) {
-      const chunks = failedChunks
-      failedChunks = []
-      await uploadFileChunks(chunks)
-    }
+  // 等待剩余的所有任务完成
+  await Promise.all([...executing])
+  if (progress === fileChunks.length) {
+    await  mergeFile({ fileName: file!.name, hash: fileHash })
+    ElMessage.success(`${file!.name} 上传成功`) 
   }
-  await uploadFileChunks(fileChunks.value)
 }
 
 const handlePause = () => {
   uploading.value = !uploading.value
   if (!uploading.value) {
-    source.cancel('终止上传！');
+    source.cancel('终止上传！')
   } else {
-    source = CancelToken.source();
+    source = CancelToken.source()
     submitUpload()
   }
 }
