@@ -1,6 +1,6 @@
 import Koa from "koa";
 import koaBody from 'koa-body';
-import { PORT, MAX_FILE_SIZE } from './const/index'
+import { PORT } from './const/index'
 import { defaultRouter } from './controller/index'
 import { errorCatch } from './middleware/errorCatch'
 

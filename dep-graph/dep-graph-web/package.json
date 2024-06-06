@@ -9,10 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.21"
+    "axios": "^1.7.2",
+    "echarts": "^5.5.0",
+    "vue": "^3.4.27"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/runtime-dom": "^3.4.27",
+    "@vue/typescript": "^1.8.20",
     "typescript": "^5.2.2",
     "vite": "^5.2.0",
     "vue-tsc": "^2.0.6"
