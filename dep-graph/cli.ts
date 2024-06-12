@@ -10,9 +10,6 @@ program
   .action((option) => {
     const serverPath = path.resolve(__dirname, './dep-graph-server');
     const clientPath = path.resolve(__dirname, './dep-graph-web');
-    console.log('serverPath', serverPath);
-    console.log('clientPath', clientPath);
-    console.log('depValue====', option);
     const serverProcess = exec(`npm run dev`, {
       cwd: serverPath,
       env: { ...process.env, DEP_VALUE: option.dep, PATH_VALUE: option.path }

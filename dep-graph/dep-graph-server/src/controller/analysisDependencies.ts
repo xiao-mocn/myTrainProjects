@@ -10,9 +10,6 @@ export const analysisDependencies = async (cxt: Context) => {
   // 获取命令行参数
   const depLevel = process.env.DEP_VALUE
   const depPath = process.env.PATH_VALUE
-  console.log('depLevel ===', depLevel)
-  console.log('depPath ===', depPath)
-  // const { filePath, dep } = cxt.request.body
   // 将文件路径退到dep-graph目录下
   const filePath = `../../../${depPath}`
   const dep = parseInt(depLevel!) || 3
@@ -35,7 +32,6 @@ export const analysisDependencies = async (cxt: Context) => {
     data: {
       data: {
         graphOption: doGraphParse(dependencies, dep)
-        // graphOption: dependencies
       }
     }
   }
