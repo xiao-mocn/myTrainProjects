@@ -1,19 +1,20 @@
 {
   "name": "dep-graph",
   "version": "1.0.0",
-  "description": "CLI to start backend and frontend services",
-  "main": "start.ts",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node start.js --server --client"
+    "dev": "ts-node ./cli.ts start"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependenciews": {},
-  "devDependencies": {},
   "dependencies": {
-    "commander": "^12.1.0",
+    "child_process": "^1.0.2",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   }
