@@ -17,9 +17,9 @@ export interface Response<T> {
 }
 
 export interface GetDepControllerParams {
-  // 文件名
-  filePath: string,
-  dep?: number
+  // // 文件名
+  // filePath: string,
+  // dep?: number
 }
 
 export type GetDepControllerResponse = Response<{

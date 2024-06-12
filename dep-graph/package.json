@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node ./cli.ts start"
+    "dev": "ts-node ./cli.ts"
   },
   "keywords": [],
   "author": "",

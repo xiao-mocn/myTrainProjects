@@ -14,10 +14,6 @@ const api = new RequestServer({
 })
 
 export async function getDependencies(params: GetDepControllerParams) {
-  // 默认dep为3
-  if (!params.dep) {
-    params.dep = 3
-  }
   const res = await api.Post<GetDepControllerResponse>({
     url: 'api/getDependencies',
     data: params,

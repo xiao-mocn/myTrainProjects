@@ -19,11 +19,7 @@ echarts.use(
 let chartDom: HTMLElement;
 onMounted(async () => {
   chartDom = document.getElementById('graph')!;
-  const res = await getDependencies({
-    // filePath: '../../package-lock.json'
-    filePath: '../../pnpm-lock.yaml'
-    // filePath: '../../yarn.lock'
-  })
+  const res = await getDependencies({})
   const { graphOption } = res
   console.log(graphOption)
   const myChart = echarts.init(chartDom);
