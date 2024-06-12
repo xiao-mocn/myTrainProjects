@@ -29,7 +29,7 @@ const parseFromSpecify = (specifier: string) => {
 export const getPnpmDependencies = async (filePath: string) => {
   const fileContents = await fs.readFile(filePath, 'utf8');
   const data = yaml.parse(fileContents);
-  const { importers, packages, dependencies, devDependencies, } = data;
+  const { importers, packages } = data;
   let deps: Record<string, PackageInfo> = {};
   if (importers) {
     const modules = Object.keys(importers).map(key => ({

@@ -1,5 +1,5 @@
 import { Context } from 'koa'
-import { HttpError } from '../utils/index'
+import { HttpError } from './index'
 
 export const errorCatch = () => {
   return async (ctx: Context, next: () => Promise<void>) => {
