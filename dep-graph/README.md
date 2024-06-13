@@ -14,5 +14,6 @@ npm install
 
 #### 启动服务
 ```bash
+  npm install
   npm run dev -- --dep=3 --path=./package-lock.json
 ```
