@@ -16,6 +16,8 @@ export async function mergeChunkController (ctx: Context) {
   })
   const writeStream = fs.createWriteStream(`${UPLOAD_DIR}/${fileName}`);
   // console.log('chunks =', chunks)
+  // 虽然问题不大，但建议这里做成 promise.all
+  // 极端情况 —— 例如 chunks 数量超过几百个的时候，并行的性能会好很多
   for (const chunk of chunks) {
     await appendChunkContent(chunk, writeStream)
   }

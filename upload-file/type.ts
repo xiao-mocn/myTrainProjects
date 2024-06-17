@@ -1,3 +1,5 @@
+// 代码文件应该都放在某个 package 目录下
+// 这个 type.ts 不应该脱离 package 控制
 export interface Response<T> {
   code: number;
   data: T;

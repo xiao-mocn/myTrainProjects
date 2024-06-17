@@ -26,6 +26,7 @@ function executeTransaction(
   db: IDBDatabase,
   storeName: string,
   mode: IDBTransactionMode,
+  // 为什么要用 callback 方式呢？这里看起来应该用 promise 好一点
   transactionCallback: (store: IDBObjectStore) => void
 ): Promise<void> {
   return new Promise((resolve, reject) => {

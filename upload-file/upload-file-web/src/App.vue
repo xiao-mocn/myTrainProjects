@@ -1,5 +1,6 @@
 <template>
   <section>
+    <!-- 这种无用代码就删了吧 -->
     <div>
       <a href="https://vitejs.dev" target="_blank">
         <img src="/vite.svg" class="logo" alt="Vite logo" />
