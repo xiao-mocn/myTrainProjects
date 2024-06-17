@@ -25,6 +25,8 @@ export async function uploadFileController (ctx: Context) {
   }
 
   // 判断文件目录是否存在，不存在则创建该目录
+  // 这段代码在 upload-file/upload-file-server/src/controller/checkFile.ts 也出现过
+  // don't repeat yourself
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR);
   }
@@ -32,6 +34,8 @@ export async function uploadFileController (ctx: Context) {
   // 判断文件是否存在，如已存在直接返回
   // 文件存在直接返回
   const filePath = path.resolve(UPLOAD_DIR, `${fileName}`)
+  // 文件是否存在的判断也出现过
+  // don't repeat yourself
   if (await fs.pathExists(filePath)) {
     ctx.body = {
       code: 1,
