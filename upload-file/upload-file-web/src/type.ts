@@ -1,3 +1,5 @@
+import { UploadFile } from 'element-plus'
+
 export interface Response<T> {
   code: number;
   data: T;
@@ -38,3 +40,17 @@ export type mergeFileControllerReponse = Response<{
   fileName: string;
   path: string;
 }>;
+
+export interface FilePiece {
+  chunk: Blob;
+  size: number;
+  hash: string
+  pieceName: string
+}
+
+export interface RunTasksWithConcurrencyLimitParams {
+  file: UploadFile;
+  fileChunks: FilePiece[];
+  fileHash: string;
+  limit: number;
+}

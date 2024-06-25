@@ -1,33 +1,19 @@
-import { Context } from "koa";
-import { UPLOAD_DIR } from "../utils";
+import { Context } from "koa"
+import { UPLOAD_DIR } from "../utils"
 import fs from 'fs-extra'
-import path from 'path'
-import { FindFileControllerResponse } from '../../../type'
+import { fileExists } from "../utils"
 
 export async function findFileController (ctx: Context) {
-  const { fileName } = ctx.request.query;
-
-  const fileExists = async (fileName: any) => {
-    if (typeof fileName !== 'string') {
-      return false
-    }
-    const filePath = path.join(UPLOAD_DIR, fileName)
-    try {
-      await fs.promises.access(filePath, fs.constants.F_OK)
-      return true
-    } catch(e) {
-      return false
-    }
+  const { fileName } = ctx.request.query
+  // 修改成--当前文件目录是否存在，如不存在则直接返回false，存在则去搜索
+  let isExists = false
+  if (fs.existsSync(UPLOAD_DIR)) {
+    isExists = await fileExists(fileName)
   }
-
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR);
-  }
-  const isExists = await fileExists(fileName)
   ctx.body = {
     code: 0,
     data: {
       isExists: isExists
     },
-  } satisfies FindFileControllerResponse;
+  }
 }
