@@ -1,37 +1,19 @@
-import { Context } from "koa";
-import { UPLOAD_DIR } from "../utils";
+import { Context } from "koa"
+import { UPLOAD_DIR } from "../utils"
 import fs from 'fs-extra'
-import path from 'path'
-import { FindFileControllerResponse } from '../../../type'
+import { fileExists } from "../utils"
 
 export async function findFileController (ctx: Context) {
-  const { fileName } = ctx.request.query;
-
-  // 讲道理，这个 exists 的判断应该要调用很多次
-  // 理论上应该抽出去作为 utils？
-  const fileExists = async (fileName: any) => {
-    if (typeof fileName !== 'string') {
-      return false
-    }
-    const filePath = path.join(UPLOAD_DIR, fileName)
-    try {
-      await fs.promises.access(filePath, fs.constants.F_OK)
-      return true
-    } catch(e) {
-      return false
-    }
+  const { fileName } = ctx.request.query
+  // 修改成--当前文件目录是否存在，如不存在则直接返回false，存在则去搜索
+  let isExists = false
+  if (fs.existsSync(UPLOAD_DIR)) {
+    isExists = await fileExists(fileName)
   }
-
-  // 假如文件不存在，这里似乎并没必要 mkdir？
-  // check file 接口应该是幂等的，不要做不必要的副作用
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR);
-  }
-  const isExists = await fileExists(fileName)
   ctx.body = {
     code: 0,
     data: {
       isExists: isExists
     },
-  } satisfies FindFileControllerResponse;
+  }
 }

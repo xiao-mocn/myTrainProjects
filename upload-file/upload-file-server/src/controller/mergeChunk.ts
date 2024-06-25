@@ -14,18 +14,15 @@ export async function mergeChunkController (ctx: Context) {
     const bIndex = parseInt(b.split('_')[1], 10);
     return aIndex - bIndex
   })
-  const writeStream = fs.createWriteStream(`${UPLOAD_DIR}/${fileName}`);
-  // console.log('chunks =', chunks)
-  // 虽然问题不大，但建议这里做成 promise.all
-  // 极端情况 —— 例如 chunks 数量超过几百个的时候，并行的性能会好很多
-  for (const chunk of chunks) {
-    await appendChunkContent(chunk, writeStream)
-  }
+  const writeStream = fs.createWriteStream(`${UPLOAD_DIR}/${hash}_${fileName}`);
+  // 改用promise.all方法，并行执行所有合并操作，提升大文件合并的效率
+  const mergeChunkController = chunks.map(chunk => appendChunkContent(chunk, writeStream))
+  await Promise.all(mergeChunkController)
   writeStream.end();
   ctx.body = {
     code: 0,
     data: {
-      fileName: fileName
+      fileName: `${hash}_${fileName}`
     },
   }
 }

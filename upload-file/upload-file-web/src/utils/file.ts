@@ -1,12 +1,6 @@
 import { UploadFile } from 'element-plus'
+import { FilePiece } from '../type'
 import { DEFAULT_CHUNK_MAX_COUNT, DEFAULT_CHUNK_SIZE } from '../const'
-
-export interface FilePiece {
-  chunk: Blob;
-  size: number;
-  hash: string
-  pieceName: string
-}
 
 export const splitFile = (file: UploadFile, hash: string) => {
   const fileChunks: FilePiece[] = []

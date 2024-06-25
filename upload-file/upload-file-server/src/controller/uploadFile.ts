@@ -2,7 +2,7 @@
 import fs from 'fs-extra'
 import path from 'path'
 import { Context } from "koa"
-import { UPLOAD_DIR, isValidString } from "../utils"
+import { UPLOAD_DIR, isValidString, fileExists } from "../utils"
 
 export async function uploadFileController (ctx: Context) {
   const { fileName, hash } = ctx.request.body
@@ -25,28 +25,12 @@ export async function uploadFileController (ctx: Context) {
   }
 
   // 判断文件目录是否存在，不存在则创建该目录
-  // 这段代码在 upload-file/upload-file-server/src/controller/checkFile.ts 也出现过
-  // don't repeat yourself
   if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR);
+    fs.mkdirSync(UPLOAD_DIR)
   }
 
-  // 判断文件是否存在，如已存在直接返回
-  // 文件存在直接返回
-  const filePath = path.resolve(UPLOAD_DIR, `${fileName}`)
-  // 文件是否存在的判断也出现过
-  // don't repeat yourself
-  if (await fs.pathExists(filePath)) {
-    ctx.body = {
-      code: 1,
-      message: 'file exist',
-      data: { fileName: fileName }
-    }
-    return
-  }
   // 切片存在直接返回
-  const chunkPath = path.resolve(UPLOAD_DIR, `${fileName}`)
-  if (await fs.pathExists(chunkPath)) {
+  if (await fileExists(fileName)) {
     ctx.body = {
       code: 2,
       message: 'chunk exist',

@@ -13,7 +13,7 @@ import {
   uploadChunkControllerReponse,
   mergeFileControllerParams,
   mergeFileControllerReponse
-} from '../../../type'
+} from '../type'
 import { type CancelToken } from 'axios';
 
 const uploadApi = new RequestServer({
@@ -23,8 +23,7 @@ const uploadApi = new RequestServer({
 
 export async function checkFile(params: FindFileControllerParams) {
   const res = await uploadApi.Get<FindFileControllerResponse>({
-    // what？根据文件名来判断？
-    // 这应该用 hash 判断呀
+    // 修改成--使用hash_fileName方式进行查询
     url: `${ API_FIND_FILE }?fileName=${ params.fileName }`
   });
   return res.data;

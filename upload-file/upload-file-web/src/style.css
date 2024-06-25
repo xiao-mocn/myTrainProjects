@@ -54,10 +54,6 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* 这个 card 有必要定义在这吗？写在组件里会不会好点？ */
-.card {
-  padding: 2em;
-}
 
 #app {
   width: 600px;

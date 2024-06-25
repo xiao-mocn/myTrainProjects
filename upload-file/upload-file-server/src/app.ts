@@ -1,6 +1,4 @@
 import Koa from "koa";
-// 这个 body 并没有用到
-import koaBody from 'koa-body';
 import { PORT } from './const/index'
 import { defaultRouter } from './controller/index'
 import { errorCatch } from './middleware/errorCatch'

@@ -18,8 +18,8 @@
         <template #trigger>
           <el-button type="primary">请选择文件</el-button>
         </template>
-        <el-button class="ml-3" type="success" @click="submitUpload" :loading="uploadLoadding"> 上传文件 </el-button>
-        <el-button class="ml-3" type="success" @click="handlePause"> {{ uploading ? '暂停上传' : '继续上传'}} </el-button>
+        <el-button class="ml-3" type="success" @click="submitUpload" :loading="uploading"> 上传文件 </el-button>
+        <el-button class="ml-3" type="success" @click="handlePause"> {{ uploading ? '继续上传' : '暂停上传'}} </el-button>
       </el-upload>
       
     </div>
@@ -39,27 +39,29 @@
 import { ref, onMounted} from 'vue'
 import axios from 'axios';
 import { getFileHashNum } from '../utils/hash'
-import { FilePiece, splitFile } from '../utils/file'
+import { splitFile } from '../utils/file'
 import { ElMessage, UploadFile, UploadProps, UploadInstance } from 'element-plus'
+import { FilePiece, RunTasksWithConcurrencyLimitParams} from '../type'
 import { checkFile, uploadChunk, mergeFile } from '../api/uploadFile'
-import { openDB, getData, addData } from '../utils/indexDb'
+import { openDB, getData, addData, deleteRecord } from '../utils/indexDb'
 
 const upload = ref<UploadInstance>()
 const fileList = ref<UploadFile[]>([])
-let fileHash: string = ('')
 const progressPercentage = ref(0)
-// uploadLoadding => uploadLoading
-const uploadLoadding = ref(false)
 const CancelToken = axios.CancelToken;
+const uploading = ref(false)
 let source = CancelToken.source();
-// uploading 跟上面的 uploadLoadding 是啥关系？
-const uploading = ref(true)
-let db: IDBDatabase = {} as IDBDatabase
+let db: IDBDatabase
 onMounted(async () => {
-  // 这个有必要重复 init 吗？
-  // 感觉应该做成单例模式
-  db = await openDB('uploadFile', 2)
+  db = await getDbInstance()
 });
+
+async function getDbInstance() {
+  if (!db) {
+    db = await openDB('uploadFile', 2);
+  }
+  return db;
+}
 
 const onFileChange: UploadProps['onChange']  = (uploadFile) => {
   console.log('uploadFile ===', uploadFile);
@@ -67,50 +69,45 @@ const onFileChange: UploadProps['onChange']  = (uploadFile) => {
   fileList.value.push(uploadFile)
 }
 const handleRemove = (file: UploadFile) => {
-  // 万一 fileList 里面找不到 file 呢？
-  // 你需要养成习惯：防御性编程
-  // 多对参数做一些校验判断
-  fileList.value.splice(fileList.value.indexOf(file), 1)
-  
+  const index = fileList.value.indexOf(file)
+  if (index > -1) {
+    fileList.value.splice(index, 1)
+  }
 }
 const handleExceed: UploadProps['onExceed'] = () => {
   ElMessage.warning('最多只能上传3个文件')
 }
 const percentageFormat = () => {
-  // 这个不用四舍五入处理一下吗
-  return `${progressPercentage.value}%`
+  return `${progressPercentage.value.toFixed(2)}%`
 }
 const submitUpload = async () => {
   if (!fileList.value.length) {
     ElMessage.warning('请选择文件再进行上传')
     return
   }
-  uploadLoadding.value = true
+  uploading.value = true
   for (const file of fileList.value) {
-    console.time('checkFile')
-    const fileIsExists: any = await checkFile({ fileName: file.name })  
-    if (fileIsExists.isExists) {
-      progressPercentage.value = 100
-      ElMessage.success(`${file.name} 上传成功`)
-      uploadLoadding.value = false
-      continue
-    }
-    console.timeEnd('checkFile')
     await uploadFile(file)
   }
-  uploadLoadding.value = false
+  uploading.value = false
 }
 const uploadFile = async (file: UploadFile) => {
+  // 将fileHash移入函数内，避免竞态冲突
+  let fileHash: string = ('')
   progressPercentage.value = 0
   console.time('getFileHashNum')
   const hash = await getData(db, 'hash', file.name)
   if (hash) {
     fileHash = hash.value
   } else {
-    // 组件看起来是支持多文件上传
-    // 但这里的 fileHash 是单个变量，容易发生竞态冲突吧？
     fileHash = await getFileHashNum(file)
     await addData(db, 'hash', { name: file.name, value: fileHash })
+  }
+  const fileIsExists: any = await checkFile({ fileName: `${fileHash}_${file.name}` })  
+  if (fileIsExists.isExists) {
+    progressPercentage.value = 100
+    ElMessage.success(`${file.name} 上传成功`)
+    return
   }
   console.timeEnd('getFileHashNum')
   console.time('storgeChunk')
@@ -121,24 +118,24 @@ const uploadFile = async (file: UploadFile) => {
     fileChunks = storgeChunk.value
   } else {
     fileChunks = splitFile(file, fileHash)
-    // 这些保存进 db 的数据，好像并没有消费？
+    // 存入indexdb，便于后续不需要重新切片，可以直接获取并直接上传
     await addData(db, 'chunks', { name: file.name, value: fileChunks })
   }
-  await runTasksWithConcurrencyLimit(file, fileChunks, 3)
+  await runTasksWithConcurrencyLimit({file, fileHash, fileChunks, limit: 3})
 }
-const uploadTask = async (chunk: FilePiece) => {
+const uploadTask = async (chunk: FilePiece, fileHash: string) => {
   const fileIsExists: any  = await checkFile({ fileName: chunk.pieceName })
   if (!fileIsExists.isExists) {
     await uploadChunk({
       chunk: chunk.chunk,
-      // 这也明显不对吧，支持多文件的情况下，hash 值可能是别的文件的？
       hash: fileHash,
       fileName: chunk.pieceName,
       cancelToken: source.token
     })
   }
 }
-const runTasksWithConcurrencyLimit = async (file: UploadFile, fileChunks: FilePiece[], limit: number = 3) => {
+const runTasksWithConcurrencyLimit = async (params: RunTasksWithConcurrencyLimitParams) => {
+  const { file, fileChunks, fileHash, limit } = params
   let progress = 0
   // 这个实现倒是挺精妙的，还不错
   const executing = new Set<Promise<any>>()
@@ -151,7 +148,7 @@ const runTasksWithConcurrencyLimit = async (file: UploadFile, fileChunks: FilePi
     if (executing.size >= limit) {
       await Promise.race(executing)
     }
-    const task = uploadTask(chunk).then(() => {
+    const task = uploadTask(chunk, fileHash).then(() => {
       executing.delete(task)
       progress++
       progressPercentage.value = parseFloat((progress  * 100 / fileChunks.length).toFixed(2))
@@ -163,7 +160,10 @@ const runTasksWithConcurrencyLimit = async (file: UploadFile, fileChunks: FilePi
   await Promise.all([...executing])
   if (progress === fileChunks.length) {
     await  mergeFile({ fileName: file!.name, hash: fileHash })
-    ElMessage.success(`${file!.name} 上传成功`) 
+    // 再上传成功之后移除indexdb中的数据
+    deleteRecord(db, 'hash', file!.name)
+    deleteRecord(db, 'chunks', file!.name)
+    ElMessage.success(`${file!.name} 上传成功`)
   }
 }
 

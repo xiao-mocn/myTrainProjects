@@ -1,5 +1,5 @@
-// 代码文件应该都放在某个 package 目录下
-// 这个 type.ts 不应该脱离 package 控制
+import { UploadFile } from 'element-plus'
+
 export interface Response<T> {
   code: number;
   data: T;
@@ -40,3 +40,17 @@ export type mergeFileControllerReponse = Response<{
   fileName: string;
   path: string;
 }>;
+
+export interface FilePiece {
+  chunk: Blob;
+  size: number;
+  hash: string
+  pieceName: string
+}
+
+export interface RunTasksWithConcurrencyLimitParams {
+  file: UploadFile;
+  fileChunks: FilePiece[];
+  fileHash: string;
+  limit: number;
+}
