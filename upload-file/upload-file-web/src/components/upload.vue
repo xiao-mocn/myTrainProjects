@@ -111,6 +111,7 @@ const uploadFile = async (file: UploadFile) => {
   }
   console.timeEnd('getFileHashNum')
   console.time('storgeChunk')
+  // storgeChunk => storageChunk
   const storgeChunk = await getData(db, 'chunks', file.name)
   console.timeEnd('storgeChunk')
   let fileChunks: FilePiece[] = []
@@ -134,6 +135,8 @@ const uploadTask = async (chunk: FilePiece, fileHash: string) => {
     })
   }
 }
+
+// 这个函数应该抽出去？
 const runTasksWithConcurrencyLimit = async (params: RunTasksWithConcurrencyLimitParams) => {
   const { file, fileChunks, fileHash, limit } = params
   let progress = 0
