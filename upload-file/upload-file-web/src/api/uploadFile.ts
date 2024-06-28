@@ -24,6 +24,7 @@ const uploadApi = new RequestServer({
 export async function checkFile(params: FindFileControllerParams) {
   const res = await uploadApi.Get<FindFileControllerResponse>({
     // 修改成--使用hash_fileName方式进行查询
+    // 这个 url 参数拼接可以用 queryString 之类的包来做
     url: `${ API_FIND_FILE }?fileName=${ params.fileName }`
   });
   return res.data;
