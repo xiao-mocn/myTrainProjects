@@ -17,7 +17,7 @@ export type FindFileControllerResponse = Response<{
 
 // 注意变量命名风格保持统一
 // uploadChunkControllerParams => UploadChunkControllerParams
-export interface uploadChunkControllerParams {
+export interface UploadChunkControllerParams {
   // 分片内容
   chunk: Blob;
   // 文件 hash 值
@@ -28,7 +28,7 @@ export interface uploadChunkControllerParams {
 
 // typo
 // uploadChunkControllerReponse => UploadChunkControllerResponse
-export type uploadChunkControllerReponse = Response<{
+export type UploadChunkControllerReponse = Response<{
   index: number;
   hash: string;
 }>;

@@ -110,13 +110,13 @@ const uploadFile = async (file: UploadFile) => {
     return
   }
   console.timeEnd('getFileHashNum')
-  console.time('storgeChunk')
-  // storgeChunk => storageChunk
-  const storgeChunk = await getData(db, 'chunks', file.name)
-  console.timeEnd('storgeChunk')
+  console.time('storageChunk')
+  // storageChunk => storageChunk
+  const storageChunk = await getData(db, 'chunks', file.name)
+  console.timeEnd('storageChunk')
   let fileChunks: FilePiece[] = []
-  if (storgeChunk) {
-    fileChunks = storgeChunk.value
+  if (storageChunk) {
+    fileChunks = storageChunk.value
   } else {
     fileChunks = splitFile(file, fileHash)
     // 存入indexdb，便于后续不需要重新切片，可以直接获取并直接上传
