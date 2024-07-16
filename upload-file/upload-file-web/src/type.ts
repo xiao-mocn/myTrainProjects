@@ -15,8 +15,9 @@ export type FindFileControllerResponse = Response<{
   isExists: boolean
 }>;
 
-
-export interface uploadChunkControllerParams {
+// 注意变量命名风格保持统一
+// uploadChunkControllerParams => UploadChunkControllerParams
+export interface UploadChunkControllerParams {
   // 分片内容
   chunk: Blob;
   // 文件 hash 值
@@ -25,7 +26,9 @@ export interface uploadChunkControllerParams {
   fileName: string;
 }
 
-export type uploadChunkControllerReponse = Response<{
+// typo
+// uploadChunkControllerReponse => UploadChunkControllerResponse
+export type UploadChunkControllerReponse = Response<{
   index: number;
   hash: string;
 }>;
